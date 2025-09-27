@@ -1,0 +1,10 @@
+---
+title: "02_partial_read_export"
+author: "JY"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```

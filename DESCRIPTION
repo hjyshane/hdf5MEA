@@ -1,0 +1,34 @@
+Package: hdf5MEA
+Title: R I/O Toolkit for Multi-well HDF5 MEA Files (BRW/BXR v4)
+Version: 0.1.0
+Authors@R: c(
+    person(given = "Hyojung", family = "Yoon", email = "hyojungyoon90@gmail.com",
+           role = c("aut","cre"))
+)
+Description: Read and inspect 3Brain-style BRW/BXR v4 HDF5 files in R.
+    Provides metadata access, partial channel/interval reads, plate/well layout handling,
+    and export to CSV/Parquet/HDF5 for downstream analysis.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.3.0)
+Imports:
+    hdf5r,
+    data.table,
+    arrow,
+    yaml,
+    cli,
+    rlang
+Suggests:
+    tibble,
+    dplyr,
+    tidyr,
+    readr,
+    ggplot2,
+    testthat (>= 3.2.3),
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+URL: https://github.com/<username>/hdf5MEA
+BugReports: https://github.com/<username>/hdf5MEA/issues
+Language: en
+Roxygen: list(markdown = TRUE)
