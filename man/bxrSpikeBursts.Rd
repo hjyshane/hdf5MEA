@@ -6,7 +6,6 @@
 \usage{
 bxrSpikeBursts(
   h5,
-  sampling_rate,
   well_id = "Well_A1",
   grid_n = 48,
   start = NULL,
@@ -15,8 +14,6 @@ bxrSpikeBursts(
 }
 \arguments{
 \item{h5}{H5File object from \code{\link{openBXR}}}
-
-\item{sampling_rate}{Numeric. Sampling rate in Hz}
 
 \item{well_id}{Character. Well identifier (default: "Well_A1")}
 
@@ -44,13 +41,12 @@ with optional time filtering and grid mapping.
 \examples{
 \dontrun{
 h5 <- openBXR("data.bxr")
-sr <- getAttributes(h5, "SamplingRate")
 
 # Get all spike bursts
-bursts <- bxrSpikeBursts(h5, sr)
+bursts <- bxrSpikeBursts(h5)
 
 # Get bursts in specific time window
-bursts_subset <- bxrSpikeBursts(h5, sr, start = 10, duration = 30)
+bursts_subset <- bxrSpikeBursts(h5, start = 10, duration = 30)
 
 h5$close()
 }

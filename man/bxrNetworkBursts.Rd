@@ -6,7 +6,6 @@
 \usage{
 bxrNetworkBursts(
   h5,
-  sampling_rate,
   well_id = "Well_A1",
   grid_n = 48,
   start = NULL,
@@ -15,8 +14,6 @@ bxrNetworkBursts(
 }
 \arguments{
 \item{h5}{H5File object from \code{\link{openBXR}}}
-
-\item{sampling_rate}{Numeric. Sampling rate in Hz}
 
 \item{well_id}{Character. Well identifier (default: "Well_A1")}
 
@@ -44,10 +41,9 @@ with optional time filtering and grid mapping.
 \examples{
 \dontrun{
 h5 <- openBXR("data.bxr")
-sr <- getAttributes(h5, "SamplingRate")
 
 # Get all network bursts
-net_bursts <- bxrNetworkBursts(h5, sr)
+net_bursts <- bxrNetworkBursts(h5)
 
 h5$close()
 }

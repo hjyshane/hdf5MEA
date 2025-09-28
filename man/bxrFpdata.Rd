@@ -4,19 +4,10 @@
 \alias{bxrFpdata}
 \title{Extract field potential data from BXR file}
 \usage{
-bxrFpdata(
-  h5,
-  sampling_rate,
-  well_id = "Well_A1",
-  grid_n = 48,
-  start = NULL,
-  duration = NULL
-)
+bxrFpdata(h5, well_id = "Well_A1", grid_n = 48, start = NULL, duration = NULL)
 }
 \arguments{
 \item{h5}{H5File object from \code{\link{openBXR}}}
-
-\item{sampling_rate}{Numeric. Sampling rate in Hz}
 
 \item{well_id}{Character. Well identifier (default: "Well_A1")}
 
@@ -44,13 +35,12 @@ information with optional time filtering and grid mapping.
 \examples{
 \dontrun{
 h5 <- openBXR("data.bxr")
-sr <- getAttributes(h5, "SamplingRate")
 
 # Get all field potentials
-fps <- bxrFpdata(h5, sr)
+fps <- bxrFpdata(h5)
 
 # Get field potentials in specific time window
-fps_subset <- bxrFpdata(h5, sr, start = 10, duration = 30)
+fps_subset <- bxrFpdata(h5, start = 10, duration = 30)
 
 h5$close()
 }

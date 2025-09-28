@@ -6,7 +6,6 @@
 \usage{
 brwtimeseriesConvert(
   parsed_data,
-  sampling_rate,
   start_frame,
   mode = c("full", "events_only", "threshold"),
   threshold = 50
@@ -14,8 +13,6 @@ brwtimeseriesConvert(
 }
 \arguments{
 \item{parsed_data}{List. Output from \code{\link{brwdataParse}}}
-
-\item{sampling_rate}{Numeric. Sampling rate in Hz for time axis calculation}
 
 \item{start_frame}{Integer. Reference start frame for time calculation}
 
@@ -51,11 +48,11 @@ raw_data <- get_brw_data("data.brw", start = 10, duration = 2)
 parsed <- brwdataParse(raw_data$binary_chunk)
 
 # Convert to time series (all data)
-ts_full <- brwtimeseriesConvert(parsed, raw_data$sampling_rate, 
+ts_full <- brwtimeseriesConvert(parsed, 
                                 raw_data$start_frame, mode = "full")
 
 # Convert to time series (events only)
-ts_events <- brwtimeseriesConvert(parsed, raw_data$sampling_rate,
+ts_events <- brwtimeseriesConvert(parsed,
                                   raw_data$start_frame, mode = "events_only")
 
 # Access channel data

@@ -4,14 +4,12 @@
 \alias{getWaveform}
 \title{Extract waveform data from BXR file}
 \usage{
-getWaveform(h5, well_id = "Well_A1", sampling_rate, waveform_indices = NULL)
+getWaveform(h5, well_id = "Well_A1", waveform_indices = NULL)
 }
 \arguments{
 \item{h5}{H5File object from \code{\link{openBXR}}}
 
 \item{well_id}{Character. Well identifier (default: "Well_A1")}
-
-\item{sampling_rate}{Numeric. Sampling rate in Hz for time axis}
 
 \item{waveform_indices}{Numeric vector. Specific waveform indices to extract.
 If NULL, returns all waveforms (default: NULL)}
@@ -35,10 +33,10 @@ h5 <- openBXR("data.bxr")
 sr <- getAttributes(h5, "SamplingRate")
 
 # Get specific waveforms
-waves <- getWaveform(h5, sampling_rate = sr, waveform_indices = c(1, 5, 10))
+waves <- getWaveform(h5, waveform_indices = c(1, 5, 10))
 
 # Get all waveforms
-all_waves <- getWaveform(h5, sampling_rate = sr)
+all_waves <- getWaveform(h5)
 
 h5$close()
 }
