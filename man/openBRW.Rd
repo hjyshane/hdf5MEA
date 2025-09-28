@@ -2,28 +2,30 @@
 % Please edit documentation in R/io_brw_v4.R
 \name{openBRW}
 \alias{openBRW}
-\title{BRW v4 File I/O Functions}
+\title{Open and validate BRW file}
 \usage{
 openBRW(file)
 }
 \arguments{
-\item{file}{Character. Path to BRW file}
+\item{file}{Character. Path to BRW file (.brw extension)}
 }
 \value{
-H5File object from hdf5r package
+H5File object from hdf5r package for reading BRW data
 }
 \description{
-Functions for opening BRW v4 files and processing time/chunk information
+Opens a BRW v4 file and validates it's a proper HDF5 file structure
+according to 3Brain specifications. Supports Raw, EventsBasedSparseRaw,
+and WaveletBasedEncodedRaw data formats.
 }
 \examples{
 \dontrun{
-h5 <- openBRW("data.brw")
+# Open BRW file
+h5 <- openBRW("experiment.brw")
+
+# Always close when done
 h5$close()
 }
 }
-\author{
-hdf5MEA package
-Open and validate BRW file
-
-Opens a BRW file and validates it's a proper HDF5 file structure.
+\seealso{
+\code{\link{get_brw_data}}, \code{\link{eventBased}}
 }

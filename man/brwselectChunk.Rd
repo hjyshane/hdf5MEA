@@ -2,22 +2,41 @@
 % Please edit documentation in R/io_brw_v4.R
 \name{brwselectChunk}
 \alias{brwselectChunk}
-\title{Select chunks for time frame of interest}
+\title{Select data chunks for time range}
 \usage{
 brwselectChunk(start_frame, num_frames, frame_starts, frame_ends)
 }
 \arguments{
-\item{start_frame}{Integer. Starting frame index}
+\item{start_frame}{Integer. Starting frame index (0-based)}
 
 \item{num_frames}{Integer. Number of frames requested}
 
-\item{frame_starts}{Numeric vector. Start frames of all chunks}
+\item{frame_starts}{Numeric vector. Start frames of all chunks from TOC}
 
-\item{frame_ends}{Numeric vector. End frames of all chunks}
+\item{frame_ends}{Numeric vector. End frames of all chunks from TOC}
 }
 \value{
 Integer vector of chunk indices that overlap with requested range
 }
 \description{
-Finds chunks that overlap with the requested time frame using TOC data.
+Finds data chunks that overlap with the requested time frame using TOC information.
+Uses efficient binary search for chunk selection in large datasets.
+}
+\details{
+Chunks are selected if they have any overlap with the requested range:
+\code{(chunk_start < request_end) & (chunk_end > request_start)}
+}
+\examples{
+\dontrun{
+# Example TOC data
+starts <- c(0, 1000, 2000, 3000)
+ends <- c(1000, 2000, 3000, 4000)
+
+# Find chunks overlapping frames 1500-2500
+chunks <- brwselectChunk(1500, 1000, starts, ends)
+print(chunks)  # Should return c(2, 3)
+}
+}
+\seealso{
+\code{\link{brwtimeCheck}}, \code{\link{get_brw_data}}
 }

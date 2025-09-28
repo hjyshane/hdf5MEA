@@ -26,14 +26,17 @@ Imports:
     yaml (>= 2.3.7),
     cli (>= 3.6.1),
     rlang (>= 1.1.1),
-    methods
-Suggests:
     tibble (>= 3.2.1),
     dplyr (>= 1.1.2),
-    tidyr (>= 1.3.0),
+    jsonlite (>= 2.0.0),
     readr (>= 2.1.4),
-    ggplot2 (>= 3.4.2),
+    tidyr (>= 1.3.0),
     testthat (>= 3.0.0),
+    methods,
+    stats,
+    base
+Suggests:
+    ggplot2 (>= 3.4.2),
     knitr (>= 1.43),
     rmarkdown (>= 2.23),
     withr (>= 2.5.0),

@@ -2,21 +2,49 @@
 % Please edit documentation in R/io_brw_v4.R
 \name{brwtimeCheck}
 \alias{brwtimeCheck}
-\title{Check time range and convert to frames}
+\title{Validate time range and convert to frames}
 \usage{
 brwtimeCheck(h5, start, duration)
 }
 \arguments{
-\item{h5}{H5File object}
+\item{h5}{H5File object from \code{\link{openBRW}}}
 
 \item{start}{Numeric. Start time in seconds}
 
 \item{duration}{Numeric. Duration in seconds}
 }
 \value{
-List containing sampling rate, frame information, and TOC data
+List containing:
+\describe{
+\item{sr}{Numeric. Sampling rate in Hz}
+\item{start_frame}{Integer. Start frame index}
+\item{num_frames}{Integer. Number of frames for duration}
+\item{start_frames}{Numeric vector. All chunk start frames}
+\item{end_frames}{Numeric vector. All chunk end frames}
+}
 }
 \description{
-Validates requested time range against available data and converts
-time values to frame indices.
+Validates requested time range against available data in BRW file
+and converts time values to frame indices using sampling rate.
+Extracts TOC information for chunk management.
+}
+\details{
+Performs validation to ensure requested time range is within
+available data bounds. Reads TOC (Table of Contents) to get chunk information.
+}
+\examples{
+\dontrun{
+h5 <- openBRW("data.brw")
+
+# Check time range and get frame info
+time_info <- brwtimeCheck(h5, start = 10, duration = 5)
+
+print(paste("Sampling rate:", time_info$sr))
+print(paste("Start frame:", time_info$start_frame))
+
+h5$close()
+}
+}
+\seealso{
+\code{\link{get_brw_data}}, \code{\link{brwselectChunk}}
 }
