@@ -9,6 +9,7 @@
 
 # R package dev
 /Meta/
+/temp_hold/
 /doc/
 /inst/doc/
 .Rd2pdf*
