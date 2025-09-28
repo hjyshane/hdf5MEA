@@ -49,10 +49,10 @@ get_brw_data <- function(file,
   h5 <- openBRW(file)
   
   # Time setup and validation
-  time_info <- timeCheck(h5, start, duration)
+  time_info <- brwtimeCheck(h5, start, duration)
   
   # Get requested chunks
-  target_chunks <- selectChunk(time_info$start_frame, 
+  target_chunks <- brwselectChunk(time_info$start_frame, 
                                time_info$num_frames, 
                                time_info$start_frames, 
                                time_info$end_frames)
