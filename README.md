@@ -95,12 +95,6 @@ bursts <- bxrSpikeBursts(data,
 
 ```
 
-
-
-## License
-
-MIT License - see LICENSE file for details
-
 ## Version
 
 Current version: 0.1.0
