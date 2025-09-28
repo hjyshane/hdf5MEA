@@ -1,4 +1,35 @@
-.Rproj.user
+# R 기본
 .Rhistory
 .RData
 .Ruserdata
+*.Rproj
+
+# R Studio
+.Rproj.user/
+
+# R package dev
+/Meta/
+/doc/
+/inst/doc/
+.Rd2pdf*
+*.tar.gz
+
+# renv libraries
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/staging/
+
+# IDE
+.vscode/
+
+# temp/log
+*.log
+*.tmp
+*.temp
+
+# doc build
+docs/
+_site/
