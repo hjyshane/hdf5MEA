@@ -43,7 +43,7 @@ openBRW <- function(file) {
 #' @return List containing sampling rate, frame information, and TOC data
 #' @import hdf5r
 #' @export
-timeCheck <- function(h5, start, duration) {
+brwtimeCheck <- function(h5, start, duration) {
   # Get Sampling rate and transform time-frame
   sr <- hdf5r::h5attr(h5, "SamplingRate")
   
@@ -81,7 +81,7 @@ timeCheck <- function(h5, start, duration) {
 #' @param frame_ends Numeric vector. End frames of all chunks
 #' @return Integer vector of chunk indices that overlap with requested range
 #' @export
-selectChunk <- function(start_frame, num_frames, frame_starts, frame_ends) {
+brwselectChunk <- function(start_frame, num_frames, frame_starts, frame_ends) {
   end_frame <- start_frame + num_frames
   
   # Find overlapping chunks

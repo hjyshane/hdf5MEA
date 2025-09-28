@@ -56,7 +56,7 @@ eventBased <- function(h5, well_id, target_chunks) {
 #' @param binary_chunk Raw vector. Binary data from EventsBasedSparseRaw
 #' @return List of lists, each containing channel_id, start_frame, end_frame, and samples
 #' @export
-dataParse <- function(binary_chunk) {
+brwdataParse <- function(binary_chunk) {
   # Create empty list for parsed data
   parsed_data <- list()
   
@@ -134,7 +134,7 @@ dataParse <- function(binary_chunk) {
 #' @param threshold Numeric. Threshold value for "threshold" mode
 #' @return List of data frames, one per channel, with time and voltage columns
 #' @export
-timeseriesConvert <- function(parsed_data, 
+brwtimeseriesConvert <- function(parsed_data, 
                               sampling_rate, 
                               start_frame,
                               mode = c("full", "events_only", "threshold"),

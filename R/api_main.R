@@ -26,13 +26,13 @@
 #' @examples
 #' \dontrun{
 #' # Extract 2 seconds starting from 10 seconds
-#' data <- get_data("experiment.brw", well_id = "Well_A1", start = 10, duration = 2)
+#' data <- get_brw_data("experiment.brw", well_id = "Well_A1", start = 10, duration = 2)
 #' 
 #' # Parse and convert to time series
 #' parsed <- dataParse(data$binary_chunk)
 #' timeseries <- timeseriesConvert(parsed, data$sampling_rate, data$start_frame)
 #' }
-get_data <- function(file,
+get_brw_data <- function(file,
                      well_id = "Well_A1", 
                      start = 0, 
                      duration = 5) {

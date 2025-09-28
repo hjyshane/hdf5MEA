@@ -1,26 +1,26 @@
 # Test file for main API functions
 
-test_that("get_data validates input parameters", {
+test_that("get_brw_data validates input parameters", {
   # Test negative start time
   expect_error(
-    get_data("dummy.brw", start = -1, duration = 5),
+    get_brw_data("dummy.brw", start = -1, duration = 5),
     "Time parameter is wrong"
   )
   
   # Test zero duration
   expect_error(
-    get_data("dummy.brw", start = 0, duration = 0),
+    get_brw_data("dummy.brw", start = 0, duration = 0),
     "Time parameter is wrong"
   )
   
   # Test negative duration
   expect_error(
-    get_data("dummy.brw", start = 0, duration = -1),
+    get_brw_data("dummy.brw", start = 0, duration = -1),
     "Time parameter is wrong"
   )
 })
 
-test_that("get_data warns about memory usage", {
+test_that("get_brw_data warns about memory usage", {
   # Create a temporary valid file for testing warning
   temp_file <- tempfile(fileext = ".brw")
   file.create(temp_file)
@@ -28,25 +28,25 @@ test_that("get_data warns about memory usage", {
   # Test large duration warning (will fail at file opening, but warning should come first)
   # We need to test the warning logic separately
   expect_warning(
-    tryCatch(get_data(temp_file, start = 0, duration = 10), error = function(e) NULL),
+    tryCatch(get_brw_data(temp_file, start = 0, duration = 10), error = function(e) NULL),
     "may run out of memory"
   )
   
   file.remove(temp_file)
 })
 
-test_that("get_data handles file operations correctly", {
+test_that("get_brw_data handles file operations correctly", {
   # Test non-existent file
   expect_error(
-    get_data("nonexistent_file.brw", start = 0, duration = 1),
+    get_brw_data("nonexistent_file.brw", start = 0, duration = 1),
     "File path is invalid"
   )
 })
 
-test_that("get_data returns correct structure", {
+test_that("get_brw_data returns correct structure", {
   skip("Requires test BRW file")
   
-  # This test would verify that get_data returns a list with:
+  # This test would verify that get_brw_data returns a list with:
   # - binary_chunk
   # - stored_channels  
   # - data_range
@@ -62,7 +62,7 @@ test_that("full pipeline works with mock data", {
   skip("Integration test - requires comprehensive mock setup")
   
   # This would test the complete pipeline:
-  # get_data() -> dataParse() -> timeseriesConvert()
+  # get_brw_data() -> dataParse() -> timeseriesConvert()
   # with realistic mock data
 })
 
@@ -96,7 +96,7 @@ test_that("sparse modes produce consistent results", {
 test_that("error handling propagates correctly", {
   # Test that errors from lower-level functions bubble up appropriately
   expect_error(
-    get_data("", start = 0, duration = 1),
+    get_brw_data("", start = 0, duration = 1),
     class = "error"
   )
 })
@@ -104,7 +104,7 @@ test_that("error handling propagates correctly", {
 test_that("default parameters work", {
   # Test default well_id, start, and duration
   expect_error(
-    get_data("nonexistent.brw"),  # Uses defaults
+    get_brw_data("nonexistent.brw"),  # Uses defaults
     "File path is invalid"  # Should fail on file, not parameters
   )
 })
