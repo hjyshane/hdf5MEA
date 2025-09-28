@@ -79,9 +79,9 @@ test_that("sparse modes produce consistent results", {
   )
   
   # Test all modes
-  full_result <- timeseriesConvert(mock_parsed, 1000, 0, mode = "full")
-  events_result <- timeseriesConvert(mock_parsed, 1000, 0, mode = "events_only")
-  threshold_result <- timeseriesConvert(mock_parsed, 1000, 0, mode = "threshold", threshold = 150)
+  full_result <- brwtimeseriesConvert(mock_parsed, 1000, 0, mode = "full")
+  events_result <- brwtimeseriesConvert(mock_parsed, 1000, 0, mode = "events_only")
+  threshold_result <- brwtimeseriesConvert(mock_parsed, 1000, 0, mode = "threshold", threshold = 150)
   
   # Verify relationships
   expect_equal(nrow(full_result[["9999"]]), 10)
