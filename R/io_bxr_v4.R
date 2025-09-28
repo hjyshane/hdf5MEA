@@ -138,7 +138,6 @@ bxrSpikedata <- function(h5,
 #' with optional time filtering and grid mapping.
 #' 
 #' @param h5 H5File object from \code{\link{openBXR}}
-#' @param sampling_rate Numeric. Sampling rate in Hz
 #' @param well_id Character. Well identifier (default: "Well_A1")
 #' @param grid_n Integer. Grid size for channel mapping (default: 48)
 #' @param start Numeric. Start time in seconds for filtering (optional)
@@ -158,17 +157,16 @@ bxrSpikedata <- function(h5,
 #' @examples
 #' \dontrun{
 #' h5 <- openBXR("data.bxr")
-#' sr <- getAttributes(h5, "SamplingRate")
 #' 
 #' # Get all spike bursts
-#' bursts <- bxrSpikeBursts(h5, sr)
+#' bursts <- bxrSpikeBursts(h5)
 #' 
 #' # Get bursts in specific time window
-#' bursts_subset <- bxrSpikeBursts(h5, sr, start = 10, duration = 30)
+#' bursts_subset <- bxrSpikeBursts(h5, start = 10, duration = 30)
 #' 
 #' h5$close()
 #' }
-bxrSpikeBursts <- function(h5, sampling_rate,  
+bxrSpikeBursts <- function(h5,
                            well_id = "Well_A1",
                            grid_n = 48,
                            start = NULL,
@@ -176,6 +174,7 @@ bxrSpikeBursts <- function(h5, sampling_rate,
   # Extract spike burst data
   burst_times <- h5[[paste0(well_id, "/SpikeBurstTimes")]][,]  
   burst_chidx <- h5[[paste0(well_id, "/SpikeBurstChIdxs")]][]
+  sampling_rate <- getAttributes(h5, attr = "SamplingRate")
   
   if (length(burst_chidx) == 0) {
     cli::cli_inform("There are no bursts.")
@@ -216,7 +215,6 @@ bxrSpikeBursts <- function(h5, sampling_rate,
 #' with optional time filtering and grid mapping.
 #' 
 #' @param h5 H5File object from \code{\link{openBXR}}
-#' @param sampling_rate Numeric. Sampling rate in Hz
 #' @param well_id Character. Well identifier (default: "Well_A1")
 #' @param grid_n Integer. Grid size for channel mapping (default: 48)
 #' @param start Numeric. Start time in seconds for filtering (optional)
@@ -236,20 +234,20 @@ bxrSpikeBursts <- function(h5, sampling_rate,
 #' @examples
 #' \dontrun{
 #' h5 <- openBXR("data.bxr")
-#' sr <- getAttributes(h5, "SamplingRate")
 #' 
 #' # Get all network bursts
-#' net_bursts <- bxrNetworkBursts(h5, sr)
+#' net_bursts <- bxrNetworkBursts(h5)
 #' 
 #' h5$close()
 #' }
-bxrNetworkBursts <- function(h5, sampling_rate, 
+bxrNetworkBursts <- function(h5, 
                              well_id = "Well_A1",
                              grid_n = 48,
                              start = NULL,
                              duration = NULL) {
   network_burst_times <- h5[[paste0(well_id, "/SpikeNetworkBurstTimes")]][,]
   network_burst_chidx <- h5[[paste0(well_id, "/SpikeBurstChIdxs")]][]
+  sampling_rate <- getAttributes(h5, attr = "SamplingRate")
   
   if (ncol(network_burst_times) == 0) {
     cli::cli_inform("There are no network bursts.")
@@ -290,7 +288,6 @@ bxrNetworkBursts <- function(h5, sampling_rate,
 #' information with optional time filtering and grid mapping.
 #' 
 #' @param h5 H5File object from \code{\link{openBXR}}
-#' @param sampling_rate Numeric. Sampling rate in Hz
 #' @param well_id Character. Well identifier (default: "Well_A1")
 #' @param grid_n Integer. Grid size for channel mapping (default: 48)
 #' @param start Numeric. Start time in seconds for filtering (optional)
@@ -310,17 +307,16 @@ bxrNetworkBursts <- function(h5, sampling_rate,
 #' @examples
 #' \dontrun{
 #' h5 <- openBXR("data.bxr")
-#' sr <- getAttributes(h5, "SamplingRate")
 #' 
 #' # Get all field potentials
-#' fps <- bxrFpdata(h5, sr)
+#' fps <- bxrFpdata(h5)
 #' 
 #' # Get field potentials in specific time window
-#' fps_subset <- bxrFpdata(h5, sr, start = 10, duration = 30)
+#' fps_subset <- bxrFpdata(h5, start = 10, duration = 30)
 #' 
 #' h5$close()
 #' }
-bxrFpdata <- function(h5, sampling_rate, 
+bxrFpdata <- function(h5, 
                       well_id = "Well_A1",
                       grid_n = 48,
                       start = NULL,
@@ -328,6 +324,7 @@ bxrFpdata <- function(h5, sampling_rate,
   # Extract field potential data
   fp_times <- h5[[paste0(well_id, "/FpTimes")]][]
   fp_chidx <- h5[[paste0(well_id, "/FpChIdxs")]][]
+  sampling_rate <- getAttributes(h5, attr = "SamplingRate")
   
   if (length(fp_times) == 0) {
     cli::cli_inform("There are no field potentials.")
@@ -384,7 +381,6 @@ bxrFpdata <- function(h5, sampling_rate,
 #' 
 #' @param h5 H5File object from \code{\link{openBXR}}
 #' @param well_id Character. Well identifier (default: "Well_A1")
-#' @param sampling_rate Numeric. Sampling rate in Hz for time axis
 #' @param waveform_indices Numeric vector. Specific waveform indices to extract.
 #'   If NULL, returns all waveforms (default: NULL)
 #' @return List containing:
@@ -403,17 +399,18 @@ bxrFpdata <- function(h5, sampling_rate,
 #' sr <- getAttributes(h5, "SamplingRate")
 #' 
 #' # Get specific waveforms
-#' waves <- getWaveform(h5, sampling_rate = sr, waveform_indices = c(1, 5, 10))
+#' waves <- getWaveform(h5, waveform_indices = c(1, 5, 10))
 #' 
 #' # Get all waveforms
-#' all_waves <- getWaveform(h5, sampling_rate = sr)
+#' all_waves <- getWaveform(h5)
 #' 
 #' h5$close()
 #' }
-getWaveform <- function(h5, well_id = "Well_A1", sampling_rate, waveform_indices = NULL) {
+getWaveform <- function(h5, well_id = "Well_A1", waveform_indices = NULL) {
   # Basic info
   wavelength <- hdf5r::h5attr(h5[[paste0(well_id, "/SpikeForms")]], "Wavelength")
   spike_forms <- h5[[paste0(well_id, "/SpikeForms")]][]
+  sampling_rate <- getAttributes(h5, attr = "SamplingRate")
   
   # Start list
   waveforms <- list()

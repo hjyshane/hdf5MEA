@@ -206,7 +206,7 @@ brwselectChunk <- function(start_frame, num_frames, frame_starts, frame_ends) {
 #' }
 brwtimeCheck <- function(h5, start, duration) {
   # Get Sampling rate and transform time-frame
-  sr <- getAttributes(h5, attr = "SamplingRate")
+  sampling_rate <- getAttributes(h5, attr = "SamplingRate")
   
   # Extract whole chunk information
   root_toc <- h5[["TOC"]][, ] # read chunk data from h5 file
@@ -214,8 +214,8 @@ brwtimeCheck <- function(h5, start, duration) {
   end_frames <- as.numeric(root_toc[2, ]) # all end frames of each chunk
   
   # Transform time range to frame
-  start_frame <- as.integer(start * sr) # requested starting point
-  num_frames <- as.integer(duration * sr) # number of frames for requested duration
+  start_frame <- as.integer(start * sampling_rate) # requested starting point
+  num_frames <- as.integer(duration * sampling_rate) # number of frames for requested duration
   end_frame <- start_frame + num_frames # request ending point
   
   # check if time range is valid.
@@ -239,7 +239,6 @@ brwtimeCheck <- function(h5, start, duration) {
 #' modes for memory efficiency and analysis needs.
 #' 
 #' @param parsed_data List. Output from \code{\link{brwdataParse}}
-#' @param sampling_rate Numeric. Sampling rate in Hz for time axis calculation
 #' @param start_frame Integer. Reference start frame for time calculation
 #' @param mode Character. Data filtering mode:
 #'   \describe{
@@ -264,19 +263,18 @@ brwtimeCheck <- function(h5, start, duration) {
 #' parsed <- brwdataParse(raw_data$binary_chunk)
 #' 
 #' # Convert to time series (all data)
-#' ts_full <- brwtimeseriesConvert(parsed, raw_data$sampling_rate, 
+#' ts_full <- brwtimeseriesConvert(parsed, 
 #'                                 raw_data$start_frame, mode = "full")
 #' 
 #' # Convert to time series (events only)
-#' ts_events <- brwtimeseriesConvert(parsed, raw_data$sampling_rate,
+#' ts_events <- brwtimeseriesConvert(parsed,
 #'                                   raw_data$start_frame, mode = "events_only")
 #' 
 #' # Access channel data
 #' ch1_data <- ts_full[["1"]]  # Channel ID 1
 #' plot(ch1_data$time, ch1_data$voltage, type = "l")
 #' }
-brwtimeseriesConvert <- function(parsed_data, 
-                                 sampling_rate, 
+brwtimeseriesConvert <- function(parsed_data,
                                  start_frame,
                                  mode = c("full", "events_only", "threshold"),
                                  threshold = 50) {
@@ -293,6 +291,7 @@ brwtimeseriesConvert <- function(parsed_data,
     ch_id <- ch_data$channel_id
     
     # Create time axis (relative to start of data)
+    sampling_rate <- getAttributes(data, attr = "SamplingRate")
     time_seconds <- seq(0, length(ch_data$samples) - 1) / sampling_rate
     
     # Create data frame
