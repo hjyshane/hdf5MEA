@@ -173,6 +173,7 @@ getExperimentSettings <- function(h5) {
 #'     \item Formula: X = (index \%\% grid_n) + 1, Y = (index \%/\% grid_n) + 1
 #'   }
 #' @import dplyr tibble
+#' @importFrom stats setNames
 #' @export
 #' @examples
 #' \dontrun{
@@ -237,7 +238,7 @@ gridMapping <- function(data, stored_chid, grid_n = 48, joiner = "spike_chid") {
   
   # Join with input data
   mapped <- data %>%
-    dplyr::left_join(map, by = setNames("OriginalChipid", joiner))
+    dplyr::left_join(map, by = stats::setNames("OriginalChipid", joiner))
   
   # Check for unmapped channels
   unmapped <- sum(is.na(mapped$X))

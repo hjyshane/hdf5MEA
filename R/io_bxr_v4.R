@@ -116,7 +116,7 @@ bxrSpikedata <- function(h5,
   }
   
   # First get Sampling rate
-  sampling_rate <- getAttributes(h5, attr = "SamplingRate")
+  sampling_rate <- hdf5r::h5attr(h5, "SamplingRate")
   
   # data frame with SpikeTimes, SpikeChIdxs, SpikeUnits, StoredChIdxs
   spike_data <- data.frame(
@@ -257,7 +257,7 @@ bxrSpikeBursts <- function(h5,
   burst_chidx <- h5[[paste0(well_id, "/SpikeBurstChIdxs")]][]
   
   # Get sampling rate
-  sampling_rate <- getAttributes(h5, attr = "SamplingRate")
+  sampling_rate <- hdf5r::h5attr(h5, "SamplingRate")
   
   if (length(burst_chidx) == 0) {
     cli::cli_inform("There are no bursts.")
@@ -329,7 +329,7 @@ bxrNetworkBursts <- function(h5,
                              duration = NULL) {
   network_burst_times <- h5[[paste0(well_id, "/SpikeNetworkBurstTimes")]][,]
   network_burst_chidx <- h5[[paste0(well_id, "/SpikeBurstChIdxs")]][]
-  sampling_rate <- getAttributes(h5, attr = "SamplingRate")
+  sampling_rate <- hdf5r::h5attr(h5, "SamplingRate")
   
   if (ncol(network_burst_times) == 0) {
     cli::cli_inform("There are no network bursts.")
@@ -445,7 +445,7 @@ bxrFpdata <- function(h5,
   fp_chidx <- h5[[paste0(well_id, "/FpChIdxs")]][]
   
   # Get sampling rate
-  sampling_rate <- getAttributes(h5, attr = "SamplingRate") 
+  sampling_rate <- hdf5r::h5attr(h5, "SamplingRate")
   
   if (length(fp_times) == 0) {
     cli::cli_inform("There are no field potentials.")
@@ -516,7 +516,7 @@ bxrFpdata <- function(h5,
 #' @examples
 #' \dontrun{
 #' h5 <- openBXR("data.bxr")
-#' sr <- getAttributes(h5, "SamplingRate")
+#' sampling_rate <- hdf5r::h5attr(h5, "SamplingRate")
 #' 
 #' # Get specific waveforms
 #' waves <- getWaveform(h5, waveform_indices = c(1, 5, 10))
@@ -550,7 +550,7 @@ getWaveform <- function(h5, well_id = "Well_A1", waveform_indices = NULL) {
   # Basic info
   wavelength <- hdf5r::h5attr(h5[[paste0(well_id, "/SpikeForms")]], "Wavelength")
   spike_forms <- h5[[paste0(well_id, "/SpikeForms")]][]
-  sampling_rate <- getAttributes(h5, attr = "SamplingRate")
+  sampling_rate <- hdf5r::h5attr(h5, "SamplingRate")
   
   # Start list
   waveforms <- list()

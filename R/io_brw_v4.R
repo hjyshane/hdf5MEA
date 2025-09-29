@@ -253,7 +253,7 @@ brwtimeCheck <- function(h5, start, duration) {
   
 
   # Get Sampling rate
-  sampling_rate <- getAttributes(h5, attr = "SamplingRate")
+  sampling_rate <- hdf5r::h5attr(h5, "SamplingRate")
   
   # Extract whole chunk information
   root_toc <- h5[["TOC"]][, ] # read chunk data from h5 file

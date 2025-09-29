@@ -30,7 +30,7 @@ with timing information for analysis and visualization.
 \examples{
 \dontrun{
 h5 <- openBXR("data.bxr")
-sr <- getAttributes(h5, "SamplingRate")
+sampling_rate <- hdf5r::h5attr(h5, "SamplingRate")
 
 # Get specific waveforms
 waves <- getWaveform(h5, waveform_indices = c(1, 5, 10))
