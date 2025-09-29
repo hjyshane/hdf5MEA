@@ -15,7 +15,6 @@ gridMapping(data, stored_chid, grid_n = 48, joiner = "spike_chid")
 \describe{
 \item{48}{2304-channel chips (48x48 grid)}
 \item{32}{1024-channel chips (32x32 grid)}
-\item{64}{4096-channel chips (64x64 grid)}
 }}
 
 \item{joiner}{Character. Column name in data to join with channel mapping.
@@ -64,7 +63,4 @@ print(mapped_data[c("spike_chid", "X", "Y")])
 #          47  48  1  (top-right)  
 #        2303  48 48  (bottom-right)
 }
-}
-\seealso{
-\code{\link{bxrSpikedata}}, \code{\link{bxrFpdata}}
 }

@@ -41,6 +41,3 @@ all_waves <- getWaveform(h5)
 h5$close()
 }
 }
-\seealso{
-\code{\link{bxrSpikedata}}
-}

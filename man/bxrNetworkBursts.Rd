@@ -48,6 +48,3 @@ net_bursts <- bxrNetworkBursts(h5)
 h5$close()
 }
 }
-\seealso{
-\code{\link{bxrSpikeBursts}}, \code{\link{bxrSpikedata}}
-}

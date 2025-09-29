@@ -22,10 +22,10 @@ and WaveletBasedEncodedRaw data formats.
 # Open BRW file
 h5 <- openBRW("experiment.brw")
 
+# Check sampling rate
+sampling_rate <- h5_file$attr_open("SamplingRate")$read()
+
 # Always close when done
 h5$close()
 }
-}
-\seealso{
-\code{\link{get_brw_data}}, \code{\link{eventBased}}
 }

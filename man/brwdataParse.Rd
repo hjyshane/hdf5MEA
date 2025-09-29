@@ -45,6 +45,3 @@ print(ch1_data$channel_id)
 print(ch1_data$samples[1:10])
 }
 }
-\seealso{
-\code{\link{eventBased}}, \code{\link{brwtimeseriesConvert}}
-}

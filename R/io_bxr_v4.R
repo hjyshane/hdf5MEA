@@ -1,13 +1,11 @@
 #' Open and validate BXR file
 #' 
-#' Opens a BXR v3/v4 file and validates it's a proper HDF5 file structure
-#' according to 3Brain specifications.
+#' Opens a BXR file
 #' 
 #' @param file Character. Path to BXR file (.bxr extension)
 #' @return H5File object from hdf5r package for reading BXR data
-#' @import hdf5r
+#' @import hdf5r cli rlang
 #' @export
-#' @seealso \code{\link{bxrSpikedata}}, \code{\link{bxrFpdata}}
 #' @examples
 #' \dontrun{
 #' # Open BXR file
@@ -17,13 +15,21 @@
 #' h5$close()
 #' }
 openBXR <- function(file) {
-  # Check file path is correct.
+  # Validate input parameters
+  if (!is.character(file) || length(file) != 1) {
+    rlang::abort("file must be a single character string")
+  }
+  
   if (!file.exists(file)) {
-    rlang::abort("File path is invalid. Check path or file exist.")
-  } 
+    rlang::abort("File does not exist: {file}")
+  }
   
   # Open H5 file
-  h5 <- hdf5r::H5File$new(file, mode = "r")
+  h5 <- tryCatch({
+    hdf5r::H5File$new(file, mode = "r")
+  }, error = function(e) {
+    rlang::abort("Failed to open file as HDF5: {e$message}")
+  })
   
   # Then, validate file is correct file object.
   if (!inherits(h5, "H5File")) {
@@ -40,7 +46,11 @@ openBXR <- function(file) {
 #' 
 #' @param h5 H5File object from \code{\link{openBXR}}
 #' @param well_id Character. Well identifier (default: "Well_A1")
-#' @param grid_n Integer. Grid size for channel mapping (default: 48)
+#' @param grid_n Integer. Grid dimension for spatial mapping:
+#'   \describe{
+#'     \item{48}{2304-channel chips (48x48 grid, default)}
+#'     \item{32}{1024-channel chips (32x32 grid)}
+#'   }
 #' @param start Numeric. Start time in seconds for filtering (optional)
 #' @param duration Numeric. Duration in seconds for filtering (optional)
 #' @return data.frame with columns:
@@ -51,11 +61,11 @@ openBXR <- function(file) {
 #'     \item{peak_amplitude}{Maximum absolute amplitude}
 #'     \item{min_amplitude}{Minimum amplitude}
 #'     \item{waveform_index}{Index for waveform lookup}
-#'     \item{grid_x, grid_y}{Grid coordinates (if mapping applied)}
-#'   }
-#' @import hdf5r
+#'     \item{X}{Integer. Grid X coordinate (1-based)}
+#'     \item{Y}{Integer. Grid Y coordinate (1-based)}
+#'        }
+#' @import hdf5r cli rlang
 #' @export
-#' @seealso \code{\link{getWaveform}}, \code{\link{bxrSpikeBursts}}
 #' @examples
 #' \dontrun{
 #' h5 <- openBXR("data.bxr")
@@ -73,12 +83,44 @@ bxrSpikedata <- function(h5,
                          grid_n = 48,
                          start = NULL,
                          duration = NULL) {
+  # Validate input parameters
+  if (!inherits(h5, "H5File")) {
+    rlang::abort("h5 must be an H5File object from openBXR()")
+  }
+  
+  if (!is.character(well_id) || length(well_id) != 1) {
+    rlang::abort("well_id must be a single character string")
+  }
+  
+  if (!grepl("^Well_[A-Z][0-9]+$", well_id)) {
+    cli::cli_warn("well_id '{well_id}' does not follow 3Brain naming convention")
+  }
+  
+  if (!is.numeric(grid_n) || length(grid_n) != 1 || grid_n <= 0) {
+    rlang::abort("grid_n must be a positive integer")
+  }
+  
+  # Validate time parameters
+  if (!is.null(start) || !is.null(duration)) {
+    if (is.null(start) || is.null(duration)) {
+      rlang::abort("Both start and duration must be specified together, or both NULL")
+    }
+    
+    if (!is.numeric(start) || length(start) != 1 || start < 0) {
+      rlang::abort("start must be a non-negative numeric value")
+    }
+    
+    if (!is.numeric(duration) || length(duration) != 1 || duration <= 0) {
+      rlang::abort("duration must be a positive numeric value")
+    }
+  }
+  
   # First get Sampling rate
-  sr <- getAttributes(h5, attr = "SamplingRate")
+  sampling_rate <- getAttributes(h5, attr = "SamplingRate")
   
   # data frame with SpikeTimes, SpikeChIdxs, SpikeUnits, StoredChIdxs
   spike_data <- data.frame(
-    spike_times = h5[[paste0(well_id, "/SpikeTimes")]][] / sr,
+    spike_times = h5[[paste0(well_id, "/SpikeTimes")]][] / sampling_rate,
     spike_chid = h5[[paste0(well_id, "/SpikeChIdxs")]][],
     spike_units = h5[[paste0(well_id, "/SpikeUnits")]][]
   )
@@ -139,7 +181,11 @@ bxrSpikedata <- function(h5,
 #' 
 #' @param h5 H5File object from \code{\link{openBXR}}
 #' @param well_id Character. Well identifier (default: "Well_A1")
-#' @param grid_n Integer. Grid size for channel mapping (default: 48)
+#' @param grid_n Integer. Grid dimension for spatial mapping:
+#'   \describe{
+#'     \item{48}{2304-channel chips (48x48 grid, default)}
+#'     \item{32}{1024-channel chips (32x32 grid)}
+#'   }
 #' @param start Numeric. Start time in seconds for filtering (optional)
 #' @param duration Numeric. Duration in seconds for filtering (optional)
 #' @return data.frame with columns:
@@ -149,11 +195,11 @@ bxrSpikedata <- function(h5,
 #'     \item{start_time}{Burst start time in seconds}
 #'     \item{end_time}{Burst end time in seconds}
 #'     \item{duration}{Burst duration in seconds}
-#'     \item{grid_x, grid_y}{Grid coordinates (if mapping applied)}
+#'     \item{X}{Integer. Grid X coordinate (1-based)}
+#'     \item{Y}{Integer. Grid Y coordinate (1-based)}
 #'   }
-#' @import hdf5r
+#' @import hdf5r cli rlang
 #' @export
-#' @seealso \code{\link{bxrSpikedata}}, \code{\link{bxrNetworkBursts}}
 #' @examples
 #' \dontrun{
 #' h5 <- openBXR("data.bxr")
@@ -164,6 +210,9 @@ bxrSpikedata <- function(h5,
 #' # Get bursts in specific time window
 #' bursts_subset <- bxrSpikeBursts(h5, start = 10, duration = 30)
 #' 
+#' # Analyze burst duration distribution
+#' hist(all_bursts$duration, main = "Spike Burst Duration Distribution")
+#' 
 #' h5$close()
 #' }
 bxrSpikeBursts <- function(h5,
@@ -171,9 +220,43 @@ bxrSpikeBursts <- function(h5,
                            grid_n = 48,
                            start = NULL,
                            duration = NULL) {
+  # Validate input parameters
+  if (!inherits(h5, "H5File")) {
+    rlang::abort("h5 must be an H5File object")
+  }
+  
+  if (!is.character(well_id) || length(well_id) != 1) {
+    rlang::abort("well_id must be a single character string")
+  }
+  
+  if (!grepl("^Well_[A-Z][0-9]+$", well_id)) {
+    cli::cli_warn("well_id '{well_id}' does not follow 3Brain naming convention")
+  }
+  
+  if (!is.numeric(grid_n) || length(grid_n) != 1 || grid_n <= 0) {
+    rlang::abort("grid_n must be a positive integer")
+  }
+  
+  # Validate time parameters
+  if (!is.null(start) || !is.null(duration)) {
+    if (is.null(start) || is.null(duration)) {
+      rlang::abort("Both start and duration must be specified together, or both NULL")
+    }
+    
+    if (!is.numeric(start) || length(start) != 1 || start < 0) {
+      rlang::abort("start must be a non-negative numeric value")
+    }
+    
+    if (!is.numeric(duration) || length(duration) != 1 || duration <= 0) {
+      rlang::abort("duration must be a positive numeric value")
+    }
+  }
+  
   # Extract spike burst data
   burst_times <- h5[[paste0(well_id, "/SpikeBurstTimes")]][,]  
   burst_chidx <- h5[[paste0(well_id, "/SpikeBurstChIdxs")]][]
+  
+  # Get sampling rate
   sampling_rate <- getAttributes(h5, attr = "SamplingRate")
   
   if (length(burst_chidx) == 0) {
@@ -228,9 +311,8 @@ bxrSpikeBursts <- function(h5,
 #'     \item{duration}{Network burst duration in seconds}
 #'     \item{grid_x, grid_y}{Grid coordinates (if mapping applied)}
 #'   }
-#' @import hdf5r
+#' @import hdf5r cli rlang
 #' @export
-#' @seealso \code{\link{bxrSpikeBursts}}, \code{\link{bxrSpikedata}}
 #' @examples
 #' \dontrun{
 #' h5 <- openBXR("data.bxr")
@@ -289,7 +371,11 @@ bxrNetworkBursts <- function(h5,
 #' 
 #' @param h5 H5File object from \code{\link{openBXR}}
 #' @param well_id Character. Well identifier (default: "Well_A1")
-#' @param grid_n Integer. Grid size for channel mapping (default: 48)
+#' @param grid_n Integer. Grid dimension for spatial mapping:
+#'   \describe{
+#'     \item{48}{2304-channel chips (48x48 grid, default)}
+#'     \item{32}{1024-channel chips (32x32 grid)}
+#'   }
 #' @param start Numeric. Start time in seconds for filtering (optional)
 #' @param duration Numeric. Duration in seconds for filtering (optional)
 #' @return data.frame with columns:
@@ -299,9 +385,10 @@ bxrNetworkBursts <- function(h5,
 #'     \item{fp_chid}{Channel linear index}
 #'     \item{peak_amplitude}{Maximum absolute amplitude}
 #'     \item{min_amplitude}{Minimum amplitude}
-#'     \item{grid_x, grid_y}{Grid coordinates (if mapping applied)}
+#'     \item{X}{Integer. Grid X coordinate (1-based)}
+#'     \item{Y}{Integer. Grid Y coordinate (1-based)}
 #'   }
-#' @import hdf5r
+#' @import hdf5r cli rlang
 #' @export
 #' @seealso \code{\link{bxrSpikedata}}, \code{\link{getWaveform}}
 #' @examples
@@ -321,10 +408,44 @@ bxrFpdata <- function(h5,
                       grid_n = 48,
                       start = NULL,
                       duration = NULL) {
+  # Validate input parameters
+  if (!inherits(h5, "H5File")) {
+    rlang::abort("h5 must be an H5File object from openBXR()")
+  }
+  
+  if (!is.character(well_id) || length(well_id) != 1) {
+    rlang::abort("well_id must be a single character string")
+  }
+  
+  if (!grepl("^Well_[A-Z][0-9]+$", well_id)) {
+    cli::cli_warn("well_id '{well_id}' does not follow 3Brain naming convention")
+  }
+  
+  if (!is.numeric(grid_n) || length(grid_n) != 1 || grid_n <= 0) {
+    rlang::abort("grid_n must be a positive integer")
+  }
+  
+  # Validate time parameters
+  if (!is.null(start) || !is.null(duration)) {
+    if (is.null(start) || is.null(duration)) {
+      rlang::abort("Both start and duration must be specified together, or both NULL")
+    }
+    
+    if (!is.numeric(start) || length(start) != 1 || start < 0) {
+      rlang::abort("start must be a non-negative numeric value")
+    }
+    
+    if (!is.numeric(duration) || length(duration) != 1 || duration <= 0) {
+      rlang::abort("duration must be a positive numeric value")
+    }
+  }
+  
   # Extract field potential data
   fp_times <- h5[[paste0(well_id, "/FpTimes")]][]
   fp_chidx <- h5[[paste0(well_id, "/FpChIdxs")]][]
-  sampling_rate <- getAttributes(h5, attr = "SamplingRate")
+  
+  # Get sampling rate
+  sampling_rate <- getAttributes(h5, attr = "SamplingRate") 
   
   if (length(fp_times) == 0) {
     cli::cli_inform("There are no field potentials.")
@@ -390,9 +511,8 @@ bxrFpdata <- function(h5,
 #'     \item{sampling_rate}{Numeric. Sampling rate in Hz}
 #'     \item{time_axis}{Numeric vector. Time axis for waveforms in seconds}
 #'   }
-#' @import hdf5r
+#' @import hdf5r cli rlang
 #' @export
-#' @seealso \code{\link{bxrSpikedata}}
 #' @examples
 #' \dontrun{
 #' h5 <- openBXR("data.bxr")
@@ -407,6 +527,26 @@ bxrFpdata <- function(h5,
 #' h5$close()
 #' }
 getWaveform <- function(h5, well_id = "Well_A1", waveform_indices = NULL) {
+  # Validate input parameters
+  if (!inherits(h5, "H5File")) {
+    rlang::abort("h5 must be an H5File object")
+  }
+  
+  if (!is.character(well_id) || length(well_id) != 1) {
+    rlang::abort("well_id must be a single character string")
+  }
+  
+  if (!grepl("^Well_[A-Z][0-9]+$", well_id)) {
+    cli::cli_warn("well_id '{well_id}' does not follow 3Brain naming convention")
+  }
+  
+  if (!is.null(waveform_indices)) {
+    if (!is.numeric(waveform_indices) || any(waveform_indices < 1)) {
+      rlang::abort("waveform_indices must be positive integers (1-based)")
+    }
+    waveform_indices <- as.integer(waveform_indices)
+  }
+  
   # Basic info
   wavelength <- hdf5r::h5attr(h5[[paste0(well_id, "/SpikeForms")]], "Wavelength")
   spike_forms <- h5[[paste0(well_id, "/SpikeForms")]][]
@@ -415,27 +555,39 @@ getWaveform <- function(h5, well_id = "Well_A1", waveform_indices = NULL) {
   # Start list
   waveforms <- list()
   
-  # retrieve waveforms
-  if (!is.null(waveform_indices)){
+  # Create time axis
+  time_axis <- (0:(wavelength - 1)) / sampling_rate
+  
+  # Extract waveforms
+  if (!is.null(waveform_indices)) {
+    # Extract specific waveforms
+    waveforms <- list()
+    
     for (idx in waveform_indices) {
       start_idx <- (idx - 1) * wavelength + 1
       end_idx <- idx * wavelength
       waveforms[[paste0("index_", idx)]] <- spike_forms[start_idx:end_idx]
     }
-    cli::cli_inform("Specified waveforms are returned")
-    return(list(
+    
+    cli::cli_inform("Extracted {length(waveform_indices)} specified waveforms from '{well_id}'")
+    
+    result <- list(
       waveforms = waveforms,
       wavelength = wavelength,
       sampling_rate = sampling_rate,
-      time_axis = (0:(wavelength-1)) / sampling_rate
-    ))
+      time_axis = time_axis
+    )
+    
   } else {
-    cli::cli_inform("Waveforms are not specified. All waveform data is returned.")
-    return(list(
+    # Return all waveforms
+    cli::cli_inform("Extracted all waveforms from '{well_id}'")
+    
+    result <- list(
       waveforms = spike_forms,
       wavelength = wavelength,
       sampling_rate = sampling_rate,
-      time_axis = (0:(wavelength-1)) / sampling_rate
-    ))
+      time_axis = time_axis
+    )
   }
-}
+  return(result)
+  }

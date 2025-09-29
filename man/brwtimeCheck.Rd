@@ -16,21 +16,18 @@ brwtimeCheck(h5, start, duration)
 \value{
 List containing:
 \describe{
-\item{sr}{Numeric. Sampling rate in Hz}
-\item{start_frame}{Integer. Start frame index}
-\item{num_frames}{Integer. Number of frames for duration}
-\item{start_frames}{Numeric vector. All chunk start frames}
-\item{end_frames}{Numeric vector. All chunk end frames}
+\item{sampling_rate}{Numeric. Sampling rate in Hz from file}
+\item{start_frame}{Integer. Requested start frame (0-based)}
+\item{num_frames}{Integer. Number of frames for requested duration}
+\item{end_frame}{Integer. Requested end frame (exclusive, 0-based)}
+\item{start_frames}{Integer vector. Start frames of all data chunks}
+\item{end_frames}{Integer vector. End frames of all data chunks}
 }
 }
 \description{
 Validates requested time range against available data in BRW file
 and converts time values to frame indices using sampling rate.
 Extracts TOC information for chunk management.
-}
-\details{
-Performs validation to ensure requested time range is within
-available data bounds. Reads TOC (Table of Contents) to get chunk information.
 }
 \examples{
 \dontrun{
@@ -42,9 +39,10 @@ time_info <- brwtimeCheck(h5, start = 10, duration = 5)
 print(paste("Sampling rate:", time_info$sr))
 print(paste("Start frame:", time_info$start_frame))
 
+# Use for subsequent data extraction
+chunks <- brwselectChunk(time_info$start_frame, time_info$num_frames,
+                        time_info$start_frames, time_info$end_frames)
+
 h5$close()
 }
-}
-\seealso{
-\code{\link{get_brw_data}}, \code{\link{brwselectChunk}}
 }

@@ -9,48 +9,70 @@
 #'   returns all attributes (default: NULL)
 #' @return If attr specified: attribute value (type depends on attribute).
 #'   If attr is NULL: named list of all root attributes
-#' @details Common BRW/BXR attributes include:
-#'   \itemize{
-#'     \item SamplingRate: Sampling frequency in Hz
-#'     \item Version: File format version
-#'     \item MaxAnalogValue, MinAnalogValue: Voltage range in microvolts
-#'     \item MaxDigitalValue, MinDigitalValue: Digital quantization range
-#'     \item GUID: Global unique identifier
-#'     \item ExperimentDateTimeUtc: Experiment timestamp
+#' @return Attribute value(s):
+#'   \describe{
+#'     \item{Single attribute}{Atomic value. Type depends on HDF5 attribute (integer, numeric, character)}
+#'     \item{All attributes}{Named list. All available attributes with their values}
 #'   }
-#' @import hdf5r
+#' @import hdf5r cli rlang
 #' @export
-#' @seealso \code{\link{getExperimentSettings}}, \code{\link{openBRW}}, \code{\link{openBXR}}
 #' @examples
 #' \dontrun{
-#' h5 <- openBRW("data.brw")
+#' # Open file and get specific attributes
+#' h5_file <- openBRW("recording.brw")
 #' 
-#' # Get specific attribute
-#' sr <- getAttributes(h5, "SamplingRate")
-#' version <- getAttributes(h5, "Version")
+#' # Get sampling rate for time conversion
+#' sampling_rate <- getAttributes(h5_file, attr = "SamplingRate")
 #' 
-#' # Get all attributes
-#' all_attrs <- getAttributes(h5)
+#' # Get voltage conversion factors
+#' max_analog <- getAttributes(h5_file, attr = "MaxAnalogValue")
+#' min_analog <- getAttributes(h5_file, attr = "MinAnalogValue")
+#' 
+#' # Get all attributes for file inspection
+#' all_attrs <- getAttributes(h5_file)
 #' print(names(all_attrs))
 #' 
-#' h5$close()
+#' h5_file$close_all()
 #' }
 getAttributes <- function(h5, attr = NULL) {
-  # Validate input
+  # Validate input parameters
   if (!inherits(h5, "H5File")) {
-    rlang::abort("h5 must be an H5File object")
+    rlang::abort("h5 must be an H5File object from openBRW() or openBXR()")
   }
   
-  # if attribute is specified
   if (!is.null(attr)) {
     if (!is.character(attr) || length(attr) != 1) {
-      rlang::abort("attr must be a single character string")
+      rlang::abort("attr must be a single character string or NULL")
     }
-    return(hdf5r::h5attr(h5, attr))
+    
+    
+    # Check if specific attribute exists
+    if (!is.null(attr)) {
+      if (!is.character(attr) || length(attr) != 1) {
+        rlang::abort("attr must be a single character string or NULL")
+      }
+
+      # Extract specific attribute
+      attr_value <- tryCatch({
+        hdf5r::h5attr(h5, attr)
+      }, error = function(e) {
+        rlang::abort("Failed to read attribute '{attr}': {e$message}")
+      })
+      
+      cli::cli_inform("Retrieved attribute '{attr}': {class(attr_value)} value")
+      return(attr_value)
+      
+    } else {
+      # Extract all attributes
+      all_attributes <- tryCatch({
+        hdf5r::h5attributes(h5)
+      }, error = function(e) {
+        rlang::abort("Failed to read file attributes: {e$message}")
+      })
+      
+      return(all_attributes)
+    }
   }
-  
-  # Or all attributes return
-  return(hdf5r::h5attributes(h5))
 }
 
 #' Parse experiment settings from BRW/BXR file
@@ -61,14 +83,6 @@ getAttributes <- function(h5, attr = NULL) {
 #' 
 #' @param h5 H5File object from \code{\link{openBRW}} or \code{\link{openBXR}}
 #' @return List containing parsed experimental settings with nested structure.
-#'   Common elements include:
-#'   \describe{
-#'     \item{JsonVersion}{Integer. JSON format version}
-#'     \item{PlateInfo}{List. Information about MEA plate configuration}
-#'     \item{RecordingInfo}{List. Recording parameters and settings}
-#'     \item{AnalysisInfo}{List. Analysis pipeline configuration (BXR only)}
-#'     \item{ChipInfo}{List. Chip layout and channel mapping}
-#'   }
 #' @details The ExperimentSettings object contains comprehensive metadata about:
 #'   \itemize{
 #'     \item Hardware configuration (plate type, chip layout)
@@ -79,9 +93,9 @@ getAttributes <- function(h5, attr = NULL) {
 #'   
 #'   Character encoding is handled automatically, converting from latin1 to UTF-8
 #'   and removing non-printable characters for robust JSON parsing.
-#' @import hdf5r jsonlite
+#' @import hdf5r cli rlang
+#' @importFrom jsonlite fromJSON
 #' @export
-#' @seealso \code{\link{getAttributes}}, \code{\link{openBRW}}, \code{\link{openBXR}}
 #' @examples
 #' \dontrun{
 #' h5 <- openBRW("experiment.brw")
@@ -101,14 +115,9 @@ getAttributes <- function(h5, attr = NULL) {
 #' h5$close()
 #' }
 getExperimentSettings <- function(h5) {
-  # Validate input
+  # Validate input parameters
   if (!inherits(h5, "H5File")) {
-    rlang::abort("h5 must be an H5File object")
-  }
-  
-  # Check if ExperimentSettings exists
-  if (!"ExperimentSettings" %in% names(h5)) {
-    rlang::abort("ExperimentSettings not found in file")
+    rlang::abort("h5 must be an H5File object from openBRW() or openBXR()")
   }
   
   # Get data
@@ -118,11 +127,16 @@ getExperimentSettings <- function(h5) {
   json <- iconv(exp, from = "latin1", to = "UTF-8", sub = "")
   
   # Clean non-printable characters
-  json <- gsub("[^[:print:]]", "", json)
+  json_clean <- gsub("[^[:print:]]", "", json)
+  
+  # Validate JSON string is not empty after cleaning
+  if (nchar(json_clean) == 0) {
+    rlang::abort("No valid characters remain after cleaning JSON string")
+  }
   
   # Parse JSON to a list
   tryCatch({
-    exp <- jsonlite::fromJSON(json)
+    exp <- jsonlite::fromJSON(json_clean)
   }, error = function(e) {
     rlang::abort(paste("Failed to parse ExperimentSettings JSON:", e$message))
   })
@@ -143,7 +157,6 @@ getExperimentSettings <- function(h5) {
 #'   \describe{
 #'     \item{48}{2304-channel chips (48x48 grid)}
 #'     \item{32}{1024-channel chips (32x32 grid)}
-#'     \item{64}{4096-channel chips (64x64 grid)}
 #'   }
 #' @param joiner Character. Column name in data to join with channel mapping.
 #'   Common values: "spike_chid", "fp_chid", "burst_chidx" (default: "spike_chid")
@@ -161,7 +174,6 @@ getExperimentSettings <- function(h5) {
 #'   }
 #' @import dplyr tibble
 #' @export
-#' @seealso \code{\link{bxrSpikedata}}, \code{\link{bxrFpdata}}
 #' @examples
 #' \dontrun{
 #' # Example spike data

@@ -6,6 +6,7 @@
 \usage{
 brwtimeseriesConvert(
   parsed_data,
+  sampling_rate,
   start_frame,
   mode = c("full", "events_only", "threshold"),
   threshold = 50
@@ -13,6 +14,8 @@ brwtimeseriesConvert(
 }
 \arguments{
 \item{parsed_data}{List. Output from \code{\link{brwdataParse}}}
+
+\item{sampling_rate}{Numeric. Sampling frequency in Hz from file attributes}
 
 \item{start_frame}{Integer. Reference start frame for time calculation}
 
@@ -59,7 +62,4 @@ ts_events <- brwtimeseriesConvert(parsed,
 ch1_data <- ts_full[["1"]]  # Channel ID 1
 plot(ch1_data$time, ch1_data$voltage, type = "l")
 }
-}
-\seealso{
-\code{\link{brwdataParse}}, \code{\link{get_brw_data}}
 }

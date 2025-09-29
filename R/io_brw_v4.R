@@ -6,23 +6,29 @@
 #' 
 #' @param file Character. Path to BRW file (.brw extension)
 #' @return H5File object from hdf5r package for reading BRW data
-#' @import hdf5r
+#' @import hdf5r rlang cli
 #' @export
-#' @seealso \code{\link{get_brw_data}}, \code{\link{eventBased}}
 #' @examples
 #' \dontrun{
 #' # Open BRW file
 #' h5 <- openBRW("experiment.brw")
 #' 
+#' # Check sampling rate
+#' sampling_rate <- h5_file$attr_open("SamplingRate")$read()
+#' 
 #' # Always close when done
 #' h5$close()
 #' }
 openBRW <- function(file) {
-  # Check file path is correct.
-  if (!file.exists(file)) {
-    rlang::abort("File path is invalid. Check path or file exist.")
-  } 
+  # Validate input parameters
+  if (!is.character(file) || length(file) != 1) {
+    rlang::abort("file must be a single character string")
+  }
   
+  if (!file.exists(file)) {
+    rlang::abort("File does not exist: {file}")
+  }
+
   # Open H5 file
   h5 <- hdf5r::H5File$new(file, mode = "r")
   
@@ -54,8 +60,8 @@ openBRW <- function(file) {
 #'     \item Range header: 8 bytes start frame + 8 bytes end frame  
 #'     \item Sample data: 2 bytes per sample (16-bit integers)
 #'   }
+#' @import rlang cli
 #' @export
-#' @seealso \code{\link{eventBased}}, \code{\link{brwtimeseriesConvert}}
 #' @examples
 #' \dontrun{
 #' # Get raw binary data
@@ -147,8 +153,8 @@ brwdataParse <- function(binary_chunk) {
 #' @return Integer vector of chunk indices that overlap with requested range
 #' @details Chunks are selected if they have any overlap with the requested range:
 #'   \code{(chunk_start < request_end) & (chunk_end > request_start)}
+#' @import rlang cli
 #' @export
-#' @seealso \code{\link{brwtimeCheck}}, \code{\link{get_brw_data}}
 #' @examples
 #' \dontrun{
 #' # Example TOC data
@@ -160,12 +166,32 @@ brwdataParse <- function(binary_chunk) {
 #' print(chunks)  # Should return c(2, 3)
 #' }
 brwselectChunk <- function(start_frame, num_frames, frame_starts, frame_ends) {
+  # Validate input parameters
+  if (!is.numeric(start_frame) || length(start_frame) != 1 || start_frame < 0) {
+    rlang::abort("start_frame must be a non-negative integer")
+  }
+  
+  if (!is.numeric(num_frames) || length(num_frames) != 1 || num_frames <= 0) {
+    rlang::abort("num_frames must be a positive integer")
+  }
+  
+  if (!is.numeric(frame_starts) || !is.numeric(frame_ends)) {
+    rlang::abort("frame_starts and frame_ends must be numeric vectors")
+  }
+  
+  if (length(frame_starts) != length(frame_ends)) {
+    rlang::abort("frame_starts and frame_ends must have the same length")
+  }
+  
+  if (length(frame_starts) == 0) {
+    rlang::abort("No chunks available (empty frame arrays)")
+  }
+  
   end_frame <- start_frame + num_frames
   
   # Find overlapping chunks
-  target_chunks <- which(
-    (frame_starts < end_frame) & (frame_ends > start_frame)
-  )
+  overlap_condition <- (frame_starts < end_frame) & (frame_ends > start_frame)
+  target_chunks <- which(overlap_condition)
   
   return(target_chunks)
 }
@@ -181,17 +207,15 @@ brwselectChunk <- function(start_frame, num_frames, frame_starts, frame_ends) {
 #' @param duration Numeric. Duration in seconds  
 #' @return List containing:
 #'   \describe{
-#'     \item{sr}{Numeric. Sampling rate in Hz}
-#'     \item{start_frame}{Integer. Start frame index}
-#'     \item{num_frames}{Integer. Number of frames for duration}
-#'     \item{start_frames}{Numeric vector. All chunk start frames}
-#'     \item{end_frames}{Numeric vector. All chunk end frames}
+#'     \item{sampling_rate}{Numeric. Sampling rate in Hz from file}
+#'     \item{start_frame}{Integer. Requested start frame (0-based)}
+#'     \item{num_frames}{Integer. Number of frames for requested duration}
+#'     \item{end_frame}{Integer. Requested end frame (exclusive, 0-based)}
+#'     \item{start_frames}{Integer vector. Start frames of all data chunks}
+#'     \item{end_frames}{Integer vector. End frames of all data chunks}
 #'   }
-#' @details Performs validation to ensure requested time range is within
-#'   available data bounds. Reads TOC (Table of Contents) to get chunk information.
-#' @import hdf5r
+#' @import hdf5r rlang cli
 #' @export
-#' @seealso \code{\link{get_brw_data}}, \code{\link{brwselectChunk}}
 #' @examples
 #' \dontrun{
 #' h5 <- openBRW("data.brw")
@@ -202,10 +226,33 @@ brwselectChunk <- function(start_frame, num_frames, frame_starts, frame_ends) {
 #' print(paste("Sampling rate:", time_info$sr))
 #' print(paste("Start frame:", time_info$start_frame))
 #' 
+#' # Use for subsequent data extraction
+#' chunks <- brwselectChunk(time_info$start_frame, time_info$num_frames,
+#'                         time_info$start_frames, time_info$end_frames)
+#' 
 #' h5$close()
 #' }
 brwtimeCheck <- function(h5, start, duration) {
-  # Get Sampling rate and transform time-frame
+  # Validate input parameters
+  if (!inherits(h5, "H5File")) {
+    rlang::abort("h5 must be an H5File object from openBRW()")
+  }
+  
+  if (!is.numeric(start) || length(start) != 1 || start < 0) {
+    rlang::abort("start must be a non-negative numeric value")
+  }
+  
+  if (!is.numeric(duration) || length(duration) != 1 || duration <= 0) {
+    rlang::abort("duration must be a positive numeric value")
+  }
+  
+  # Check for required datasets
+  if (!h5$exists("TOC")) {
+    rlang::abort("TOC dataset not found in BRW file")
+  }
+  
+
+  # Get Sampling rate
   sampling_rate <- getAttributes(h5, attr = "SamplingRate")
   
   # Extract whole chunk information
@@ -224,9 +271,10 @@ brwtimeCheck <- function(h5, start, duration) {
   }  
   
   return(list(
-    sr = sr,
+    sampling_rate = sampling_rate,
     start_frame = start_frame,
     num_frames = num_frames,
+    end_frame = end_frame,
     start_frames = start_frames,
     end_frames = end_frames
   ))
@@ -239,6 +287,7 @@ brwtimeCheck <- function(h5, start, duration) {
 #' modes for memory efficiency and analysis needs.
 #' 
 #' @param parsed_data List. Output from \code{\link{brwdataParse}}
+#' @param sampling_rate Numeric. Sampling frequency in Hz from file attributes
 #' @param start_frame Integer. Reference start frame for time calculation
 #' @param mode Character. Data filtering mode:
 #'   \describe{
@@ -254,8 +303,8 @@ brwtimeCheck <- function(h5, start, duration) {
 #'   }
 #' @details Channel names in returned list correspond to channel IDs from BRW file.
 #'   Time axis is calculated relative to the start of the extracted data.
+#' @import hdf5r rlang cli dplyr
 #' @export
-#' @seealso \code{\link{brwdataParse}}, \code{\link{get_brw_data}}
 #' @examples
 #' \dontrun{
 #' # Get and parse data
@@ -275,11 +324,32 @@ brwtimeCheck <- function(h5, start, duration) {
 #' plot(ch1_data$time, ch1_data$voltage, type = "l")
 #' }
 brwtimeseriesConvert <- function(parsed_data,
+                                 sampling_rate,
                                  start_frame,
                                  mode = c("full", "events_only", "threshold"),
                                  threshold = 50) {
   
-  sparse_mode <- match.arg(mode)
+  # Validate input parameters
+  if (!is.list(parsed_data) || length(parsed_data) == 0) {
+    rlang::abort("parsed_data must be a non-empty list from brwdataParse()")
+  }
+  
+  if (!is.numeric(sampling_rate) || length(sampling_rate) != 1 || sampling_rate <= 0) {
+    rlang::abort("sampling_rate must be a positive numeric value")
+  }
+  
+  if (!is.numeric(start_frame) || length(start_frame) != 1 || start_frame < 0) {
+    rlang::abort("start_frame must be a non-negative integer")
+  }
+  
+  start_frame <- as.integer(start_frame)
+  
+  # Validate and match mode argument
+  mode <- match.arg(mode)
+  
+  if (!is.numeric(threshold) || length(threshold) != 1) {
+    rlang::abort("threshold must be a numeric value")
+  }
   
   # Initialize list for each channel
   channel_data <- list()
@@ -291,16 +361,15 @@ brwtimeseriesConvert <- function(parsed_data,
     ch_id <- ch_data$channel_id
     
     # Create time axis (relative to start of data)
-    sampling_rate <- getAttributes(data, attr = "SamplingRate")
     time_seconds <- seq(0, length(ch_data$samples) - 1) / sampling_rate
     
     # Create data frame
     df <- data.frame(time = time_seconds, voltage = ch_data$samples)
     
     # Apply filtering based on mode
-    if (sparse_mode == "events_only") {
+    if (mode == "events_only") {
       df <- df[df$voltage != 0, ]
-    } else if (sparse_mode == "threshold") {
+    } else if (mode == "threshold") {
       df <- df[abs(df$voltage) > threshold, ]
     } 
     # If mode == "full", keep all data
@@ -322,7 +391,7 @@ brwtimeseriesConvert <- function(parsed_data,
 #' Handles complete workflow: file opening, time validation, chunk selection,
 #' and binary data extraction from EventsBasedSparseRaw format.
 #' 
-#' @param file Character. Path to BRW file
+#' @param h5 H5File object. Open BXR file handle from \code{\link{openBXR}}
 #' @param well_id Character. Well identifier (default: "Well_A1")
 #' @param start Numeric. Start time in seconds (default: 0)
 #' @param duration Numeric. Duration in seconds (default: 5)
@@ -340,6 +409,7 @@ brwtimeseriesConvert <- function(parsed_data,
 #' @details This is the main user-facing function for BRW data extraction.
 #'   It automatically handles resource management (file closing) and provides
 #'   comprehensive output for downstream analysis.
+#' @import hdf5r rlang cli
 #' @export
 #' @seealso \code{\link{brwdataParse}}, \code{\link{brwtimeseriesConvert}}
 #' @examples
@@ -357,48 +427,78 @@ brwtimeseriesConvert <- function(parsed_data,
 #' print(paste("Sampling rate:", data$sampling_rate, "Hz"))
 #' print(paste("Channels available:", length(data$stored_channels)))
 #' }
-get_brw_data <- function(file,
+get_brw_data <- function(h5,
                          well_id = "Well_A1", 
                          start = 0, 
                          duration = 5) {
   
   # Validate input parameters
-  if (start < 0 | duration <= 0) {
-    rlang::abort("Time parameter is wrong.")
-  } 
-  if (duration > 5) {
-    cli::cli_warn("If duration is more than 5 seconds, You may run out of memory")
+  if (!inherits(h5, "H5File")) {
+    rlang::abort("h5 must be an H5File object from openBXR()")
   }
   
-  # File operations
-  h5 <- openBRW(file)
+  if (!is.character(well_id) || length(well_id) != 1) {
+    rlang::abort("well_id must be a single character string")
+  }
+  
+  if (!grepl("^Well_[A-Z][0-9]+$", well_id)) {
+    cli::cli_warn("well_id '{well_id}' does not follow 3Brain naming convention")
+  }
+  
+  if (!is.numeric(start) || length(start) != 1 || start < 0) {
+    rlang::abort("start must be a non-negative numeric value")
+  }
+  
+  if (!is.numeric(duration) || length(duration) != 1 || duration <= 0) {
+    rlang::abort("duration must be a positive numeric value")
+  }
   
   # Time setup and validation
-  time_info <- brwtimeCheck(h5, start, duration)
+  time_info <- tryCatch({
+    brwtimeCheck(h5, start, duration)
+  }, error = function(e) {
+    rlang::abort("Time validation failed: {e$message}")
+  })
   
-  # Get requested chunks
-  target_chunks <- brwselectChunk(time_info$start_frame, 
-                                  time_info$num_frames, 
-                                  time_info$start_frames, 
-                                  time_info$end_frames)
+  # Select data chunks that overlap with requested time range
+  target_chunks <- tryCatch({
+    brwselectChunk(time_info$start_frame, 
+                   time_info$num_frames, 
+                   time_info$start_frames, 
+                   time_info$end_frames)
+  }, error = function(e) {
+    rlang::abort("Chunk selection failed: {e$message}")
+  })
   
-  # Data extraction
-  raw_data <- eventBased(h5, well_id, target_chunks)
+  # Validate chunk selection
+  if (is.null(target_chunks) || length(target_chunks) == 0) {
+    rlang::abort("No data chunks found for requested time range")
+  }
   
-  # Clean up resources
-  h5$close()
+  # Extract binary data from selected chunks
+  raw_data <- tryCatch({
+    eventBased(h5, well_id, target_chunks)
+  }, error = function(e) {
+    rlang::abort("Data extraction failed: {e$message}")
+  })
+  
+  # Calculate end frame for completeness
+  end_frame <- time_info$start_frame + time_info$num_frames
   
   # Return comprehensive data structure
-  return(list(
+  result <- list(
     binary_chunk = raw_data$binary_chunk,
     stored_channels = raw_data$stored_channels,
     data_range = raw_data$data_range,
     sampling_rate = time_info$sr,
-    start_frame = time_info$start_frame, 
-    start_frames = time_info$start_frames,
+    start_frame = time_info$start_frame,
     num_frames = time_info$num_frames,
-    end_frame = time_info$start_frame + time_info$num_frames
-  ))
+    end_frame = end_frame,
+    start_frames = time_info$start_frames,
+    end_frames = time_info$end_frames
+  )
+  
+  return(result)
 }
 
 #' Extract EventsBasedSparseRaw binary data
@@ -409,19 +509,19 @@ get_brw_data <- function(file,
 #' 
 #' @param h5 H5File object from \code{\link{openBRW}}
 #' @param well_id Character. Well identifier (e.g., "Well_A1")
-#' @param target_chunks Integer vector. Chunk indices to extract from TOC
-#' @return List containing:
+#' @param target_chunks Integer vector. Chunk indices to extract (1-based indexing)
+#'   from Table of Contents
+#' @return List containing extracted binary data and metadata:
 #'   \describe{
-#'     \item{binary_chunk}{Raw vector. Binary data for parsing}
-#'     \item{stored_channels}{Integer vector. Available channel IDs}
-#'     \item{data_range}{Integer vector. Start and end positions in raw data}
+#'     \item{binary_chunk}{Raw bytes. EventsBasedSparseRaw binary data for parsing}
+#'     \item{stored_channels}{Integer vector. Available channel indices (0-based)}
+#'     \item{data_range}{Integer vector. Start and end positions in dataset}
 #'   }
 #' @details EventsBasedSparseRaw format stores only periods around detected events,
 #'   not continuous data. The actual time coverage may be less than requested.
 #'   Use TOC (Table of Contents) information to understand data organization.
-#' @import hdf5r
+#' @import hdf5r rlang cli
 #' @export
-#' @seealso \code{\link{get_brw_data}}, \code{\link{brwselectChunk}}
 #' @examples
 #' \dontrun{
 #' h5 <- openBRW("data.brw")
@@ -434,9 +534,29 @@ get_brw_data <- function(file,
 #' # Extract binary data
 #' raw_data <- eventBased(h5, "Well_A1", chunks)
 #' 
+#' # Parse binary data
+#' parsed <- brwdataParse(raw_data$binary_chunk)
+#' 
 #' h5$close()
 #' }
 eventBased <- function(h5, well_id, target_chunks) {
+  # Validate input parameters
+  if (!inherits(h5, "H5File")) {
+    rlang::abort("h5 must be an H5File object from openBRW()")
+  }
+  
+  if (!is.character(well_id) || length(well_id) != 1) {
+    rlang::abort("well_id must be a single character string")
+  }
+  
+  if (!grepl("^Well_[A-Z][0-9]+$", well_id)) {
+    cli::cli_warn("well_id '{well_id}' does not follow 3Brain naming convention")
+  }
+  
+  if (!is.numeric(target_chunks) || any(target_chunks < 1)) {
+    rlang::abort("target_chunks must be positive integers (1-based indexing)")
+  }
+  
   # Read EventsBasedSparseRaw data and TOC
   raw_data <- h5[[paste0(well_id, "/EventsBasedSparseRaw")]][] # saved as chunk size
   events_toc <- h5[[paste0(well_id, "/EventsBasedSparseRawTOC")]][]

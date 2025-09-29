@@ -11,14 +11,15 @@ eventBased(h5, well_id, target_chunks)
 
 \item{well_id}{Character. Well identifier (e.g., "Well_A1")}
 
-\item{target_chunks}{Integer vector. Chunk indices to extract from TOC}
+\item{target_chunks}{Integer vector. Chunk indices to extract (1-based indexing)
+from Table of Contents}
 }
 \value{
-List containing:
+List containing extracted binary data and metadata:
 \describe{
-\item{binary_chunk}{Raw vector. Binary data for parsing}
-\item{stored_channels}{Integer vector. Available channel IDs}
-\item{data_range}{Integer vector. Start and end positions in raw data}
+\item{binary_chunk}{Raw bytes. EventsBasedSparseRaw binary data for parsing}
+\item{stored_channels}{Integer vector. Available channel indices (0-based)}
+\item{data_range}{Integer vector. Start and end positions in dataset}
 }
 }
 \description{
@@ -43,9 +44,9 @@ chunks <- brwselectChunk(time_info$start_frame, time_info$num_frames,
 # Extract binary data
 raw_data <- eventBased(h5, "Well_A1", chunks)
 
+# Parse binary data
+parsed <- brwdataParse(raw_data$binary_chunk)
+
 h5$close()
 }
-}
-\seealso{
-\code{\link{get_brw_data}}, \code{\link{brwselectChunk}}
 }

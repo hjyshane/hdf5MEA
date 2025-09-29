@@ -15,38 +15,34 @@ returns all attributes (default: NULL)}
 \value{
 If attr specified: attribute value (type depends on attribute).
 If attr is NULL: named list of all root attributes
+
+Attribute value(s):
+\describe{
+\item{Single attribute}{Atomic value. Type depends on HDF5 attribute (integer, numeric, character)}
+\item{All attributes}{Named list. All available attributes with their values}
+}
 }
 \description{
 Retrieves attributes from HDF5 file root or specific attribute value.
 Supports both single attribute extraction and complete attribute listing
 for metadata inspection and file validation.
 }
-\details{
-Common BRW/BXR attributes include:
-\itemize{
-\item SamplingRate: Sampling frequency in Hz
-\item Version: File format version
-\item MaxAnalogValue, MinAnalogValue: Voltage range in microvolts
-\item MaxDigitalValue, MinDigitalValue: Digital quantization range
-\item GUID: Global unique identifier
-\item ExperimentDateTimeUtc: Experiment timestamp
-}
-}
 \examples{
 \dontrun{
-h5 <- openBRW("data.brw")
+# Open file and get specific attributes
+h5_file <- openBRW("recording.brw")
 
-# Get specific attribute
-sr <- getAttributes(h5, "SamplingRate")
-version <- getAttributes(h5, "Version")
+# Get sampling rate for time conversion
+sampling_rate <- getAttributes(h5_file, attr = "SamplingRate")
 
-# Get all attributes
-all_attrs <- getAttributes(h5)
+# Get voltage conversion factors
+max_analog <- getAttributes(h5_file, attr = "MaxAnalogValue")
+min_analog <- getAttributes(h5_file, attr = "MinAnalogValue")
+
+# Get all attributes for file inspection
+all_attrs <- getAttributes(h5_file)
 print(names(all_attrs))
 
-h5$close()
+h5_file$close_all()
 }
-}
-\seealso{
-\code{\link{getExperimentSettings}}, \code{\link{openBRW}}, \code{\link{openBXR}}
 }

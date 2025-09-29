@@ -37,6 +37,3 @@ chunks <- brwselectChunk(1500, 1000, starts, ends)
 print(chunks)  # Should return c(2, 3)
 }
 }
-\seealso{
-\code{\link{brwtimeCheck}}, \code{\link{get_brw_data}}
-}

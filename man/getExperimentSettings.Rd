@@ -11,14 +11,6 @@ getExperimentSettings(h5)
 }
 \value{
 List containing parsed experimental settings with nested structure.
-Common elements include:
-\describe{
-\item{JsonVersion}{Integer. JSON format version}
-\item{PlateInfo}{List. Information about MEA plate configuration}
-\item{RecordingInfo}{List. Recording parameters and settings}
-\item{AnalysisInfo}{List. Analysis pipeline configuration (BXR only)}
-\item{ChipInfo}{List. Chip layout and channel mapping}
-}
 }
 \description{
 Extracts and parses the ExperimentSettings JSON object from BrainWave files.
@@ -55,7 +47,4 @@ if ("AnalysisInfo" \%in\% names(settings)) {
 
 h5$close()
 }
-}
-\seealso{
-\code{\link{getAttributes}}, \code{\link{openBRW}}, \code{\link{openBXR}}
 }

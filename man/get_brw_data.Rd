@@ -4,10 +4,10 @@
 \alias{get_brw_data}
 \title{Extract MEA signal data by time range}
 \usage{
-get_brw_data(file, well_id = "Well_A1", start = 0, duration = 5)
+get_brw_data(h5, well_id = "Well_A1", start = 0, duration = 5)
 }
 \arguments{
-\item{file}{Character. Path to BRW file}
+\item{h5}{H5File object. Open BXR file handle from \code{\link{openBXR}}}
 
 \item{well_id}{Character. Well identifier (default: "Well_A1")}
 

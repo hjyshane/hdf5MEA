@@ -13,8 +13,7 @@ openBXR(file)
 H5File object from hdf5r package for reading BXR data
 }
 \description{
-Opens a BXR v3/v4 file and validates it's a proper HDF5 file structure
-according to 3Brain specifications.
+Opens a BXR file
 }
 \examples{
 \dontrun{
@@ -24,7 +23,4 @@ h5 <- openBXR("experiment.bxr")
 # Always close when done
 h5$close()
 }
-}
-\seealso{
-\code{\link{bxrSpikedata}}, \code{\link{bxrFpdata}}
 }

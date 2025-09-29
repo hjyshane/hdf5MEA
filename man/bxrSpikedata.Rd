@@ -17,7 +17,11 @@ bxrSpikedata(
 
 \item{well_id}{Character. Well identifier (default: "Well_A1")}
 
-\item{grid_n}{Integer. Grid size for channel mapping (default: 48)}
+\item{grid_n}{Integer. Grid dimension for spatial mapping:
+\describe{
+\item{48}{2304-channel chips (48x48 grid, default)}
+\item{32}{1024-channel chips (32x32 grid)}
+}}
 
 \item{start}{Numeric. Start time in seconds for filtering (optional)}
 
@@ -32,7 +36,8 @@ data.frame with columns:
 \item{peak_amplitude}{Maximum absolute amplitude}
 \item{min_amplitude}{Minimum amplitude}
 \item{waveform_index}{Index for waveform lookup}
-\item{grid_x, grid_y}{Grid coordinates (if mapping applied)}
+\item{X}{Integer. Grid X coordinate (1-based)}
+\item{Y}{Integer. Grid Y coordinate (1-based)}
 }
 }
 \description{
@@ -51,7 +56,4 @@ spikes_subset <- bxrSpikedata(h5, start = 10, duration = 30)
 
 h5$close()
 }
-}
-\seealso{
-\code{\link{getWaveform}}, \code{\link{bxrSpikeBursts}}
 }
