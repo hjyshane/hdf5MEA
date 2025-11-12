@@ -69,6 +69,11 @@ export(detectFieldPotentials)
 export(extractBRWFeatures)
 export(processBRWFile)
 
+# Example data generation
+export(generateExampleBursts)
+export(generateExampleSpikes)
+export(generateExampleVoltage)
+
 # Imports
 import(arrow)
 import(cli)

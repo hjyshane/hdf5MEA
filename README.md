@@ -74,6 +74,27 @@ devtools::install_github("hjyshane/hdf5MEA")
 library(hdf5MEA)
 ```
 
+### Try with Example Data
+```r
+# Generate example spike data (no real files needed!)
+spikes <- generateExampleSpikes(n_channels = 50, duration = 60)
+
+# Analyze immediately
+firing_rates <- calculateFiringRate(spikes)
+bursts <- detectBursts(spikes)
+connectivity <- buildConnectivityMatrix(spikes)
+
+# Visualize
+library(ggplot2)
+plotSpikeRaster(spikes, time_range = c(0, 10))
+plotFiringRateHeatmap(spikes)
+
+# Generate example voltage data for signal processing
+voltage <- generateExampleVoltage(duration = 2, n_spikes = 30)
+timeseries <- list("1" = voltage)
+detected_spikes <- detectSpikes(timeseries, sampling_rate = 10000)
+```
+
 ### Reading BXR Files (Raw Results)
 ```r
 library(hdf5MEA)
