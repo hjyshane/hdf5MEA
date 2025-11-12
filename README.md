@@ -41,6 +41,13 @@ It provides reliable loading, partial data extraction, and export capabilities w
 - Baseline drift removal
 - Artifact detection and removal
 
+### BRW Processing Pipeline
+- One-step BRW processing (filter → spike detection → analysis)
+- BRW to BXR-compatible spike data conversion
+- Field potential (FP) detection from raw voltage
+- Batch processing for multiple BRW files
+- Comprehensive feature extraction
+
 ### Visualization
 - Spike raster plots
 - Firing rate heatmaps (2D MEA grid)
@@ -118,7 +125,7 @@ filtered_data <- brwtimeseriesConvert(parsed_data,
 
 ### Reading BXR Files (Processed Results)
 ```r
-# Open BXR file  
+# Open BXR file
 data <- openBXR(bxr_test)
 sampling_rate <- getAttributes(data, attr = "SamplingRate")
 
@@ -132,6 +139,44 @@ waveforms <- getWaveform(data)
 bursts <- bxrSpikeBursts(data,
                          sampling_rate)
 
+```
+
+### Processing BRW Files (Complete Pipeline)
+```r
+# One-step processing: raw data → filtered → spike detection → analysis
+results <- processBRWFile("experiment.brw",
+                          start = 0,
+                          duration = 60,
+                          filter = TRUE,
+                          detect_spikes = TRUE,
+                          remove_artifacts = TRUE)
+
+# Access spike data (BXR-compatible format!)
+spikes <- results$spike_data
+
+# Now use all BXR analysis functions
+firing_rates <- calculateFiringRate(spikes)
+bursts <- detectBursts(spikes)
+connectivity <- buildConnectivityMatrix(spikes)
+
+# Access processing results
+raw_voltage <- results$raw_timeseries
+filtered_voltage <- results$processed_timeseries
+qc <- results$qc_metrics
+
+# Extract field potentials
+fps <- detectFieldPotentials(results$processed_timeseries,
+                             results$metadata$sampling_rate)
+
+# Batch process multiple BRW files
+files <- c("exp1.brw", "exp2.brw", "exp3.brw")
+batch_results <- batchProcessBRW(files, duration = 60, filter = TRUE)
+
+# Extract all features at once
+features <- extractBRWFeatures("experiment.brw", duration = 60)
+spike_features <- features$spikes
+fp_features <- features$field_potentials
+quality <- features$quality
 ```
 
 ## Analysis Examples
