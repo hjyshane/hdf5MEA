@@ -35,3 +35,6 @@ renv/staging/
 # doc build
 docs/
 _site/
+
+*.DS_Store
+.DS_Store
